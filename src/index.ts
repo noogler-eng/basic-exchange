@@ -13,27 +13,32 @@ let GLOBAL_TRADE_ID = 0;
 
 // posting our order
 app.post('/api/v1/order', (req, res) => {
-  const order = OrderInputSchema.safeParse(req.body);
-  if (!order.success) {
-    res.status(400).send(order.error.message);
-    return;
-  }
+  
+  // checking if the order input structure
+    const order = OrderInputSchema.safeParse(req.body);
+    if (!order.success) {
+        res.status(400).send(order.error.message);
+        return;
+    }
 
-  const { baseAsset, quoteAsset, price, quantity, side, kind } = order.data;
-  const orderId = getOrderId();
+    // what type of asset wants to exchange, with price, quantity and buy or sell
+    const { baseAsset, quoteAsset, price, quantity, side, kind } = order.data;
+    const orderId = getOrderId();
 
-  if (baseAsset !== BASE_ASSET || quoteAsset !== QUOTE_ASSET) {
-    res.status(400).send('Invalid base or quote asset');
-    return;
-  }
+    // currently working with BTC and USD
+    if (baseAsset !== BASE_ASSET || quoteAsset !== QUOTE_ASSET) {
+        res.status(400).send('Invalid base or quote asset');
+        return;
+    }
 
-  const { executedQty, fills } = fillOrder(orderId, price, quantity, side, kind);
+    // how much qty executed and fills contains details
+    const { executedQty, fills } = fillOrder(orderId, price, quantity, side, kind);
 
-  res.send({
-    orderId,
-    executedQty,
-    fills
-  });
+    res.send({
+        orderId,
+        executedQty,
+        fills
+    });
 });
 
 app.listen(3000, () => {
@@ -52,11 +57,13 @@ interface Fill {
     "tradeId": number,
 }
 
+// executed qty -> how much qty is buy or sell
 function fillOrder(orderId: string, price: number, quantity: number, side: "buy" | "sell", type?: "ioc"): { status: "rejected" | "accepted"; executedQty: number; fills: Fill[] } {
     const fills: Fill[] = [];
     const maxFillQuantity = getFillAmount(price, quantity, side);
     let executedQty = 0;
 
+    // either completely executed or gets rejected
     if (type === 'ioc' && maxFillQuantity < quantity) {
         return { status: 'rejected', executedQty: maxFillQuantity, fills: [] };
     }
@@ -73,16 +80,19 @@ function fillOrder(orderId: string, price: number, quantity: number, side: "buy"
                 console.log(filledQuantity);
                 o.quantity -= filledQuantity;
                 bookWithQuantity.asks[o.price] = (bookWithQuantity.asks[o.price] || 0) - filledQuantity;
+                // mentioning the orders or trades that has been done
                 fills.push({
                     price: o.price,
                     qty: filledQuantity,
                     tradeId: GLOBAL_TRADE_ID++
                 });
+                // how much qty has been executed
                 executedQty += filledQuantity;
                 quantity -= filledQuantity;
                 if (o.quantity === 0) {
                     orderbook.asks.splice(orderbook.asks.indexOf(o), 1);
                 }
+                // if price becomes 0 then remove it
                 if (bookWithQuantity.asks[price] === 0) {
                     delete bookWithQuantity.asks[price];
                 }
