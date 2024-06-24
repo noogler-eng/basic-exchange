@@ -31,3 +31,7 @@
 
 // 1. npm install express redis uuid zod
 // 2. npm install typescript ts-node @types/express @types/node @types/redis @types/uuid
+
+// redis - Build better experiences that grow with you—with accessible, enterprise-grade caching built by the devs who brought you open source Redis.
+// redis as a inmemory database
+// node redis require redis server / redis stack
